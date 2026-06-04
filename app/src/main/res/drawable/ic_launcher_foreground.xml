@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Munchkin sword icon -->
+    <path
+        android:fillColor="#00E5CC"
+        android:pathData="M54,20 L60,46 L80,54 L60,62 L54,88 L48,62 L28,54 L48,46 Z" />
+    <path
+        android:fillColor="#FFB930"
+        android:pathData="M54,30 L56,46 L70,54 L56,62 L54,78 L52,62 L38,54 L52,46 Z"
+        android:fillAlpha="0.6" />
+</vector>
