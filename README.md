@@ -9,6 +9,19 @@
 
 ---
 
+
+## Скриншоты
+
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="screenshots/MunchkinMainScreen.jpg" width="200"/><br/><sub>Главный экран</sub></td>
+      <td><img src="screenshots/MunchkinStatisticsScreen.jpg" width="200"/><br/><sub>Статистика</sub></td>
+    </tr>
+  </table>
+</div>
+
+
 ## Стек технологий
 
 | Слой | Библиотека |
