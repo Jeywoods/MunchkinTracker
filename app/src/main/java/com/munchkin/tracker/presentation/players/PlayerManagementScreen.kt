@@ -24,6 +24,7 @@ import com.munchkin.tracker.domain.model.Gender
 import com.munchkin.tracker.domain.model.Player
 import com.munchkin.tracker.presentation.components.AppTopBar
 import com.munchkin.tracker.presentation.components.ConfirmDialog
+import com.munchkin.tracker.presentation.components.MagicCircleBackground
 import com.munchkin.tracker.presentation.navigation.Routes
 import com.munchkin.tracker.ui.theme.*
 
@@ -39,22 +40,27 @@ fun PlayerManagementScreen(
     Box(modifier = Modifier.fillMaxSize().background(Background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             AppTopBar("Все игроки")
-            if (state.players.isEmpty() && !state.isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("👥", fontSize = 48.sp)
-                        Text("Нет игроков", color = OnSurfaceVariant)
-                        Text("Нажмите + для добавления", color = OnSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+
+            Box(modifier = Modifier.fillMaxSize().weight(1f)) {
+                MagicCircleBackground(alpha = 0.5f)
+
+                if (state.players.isEmpty() && !state.isLoading) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text("👥", fontSize = 48.sp)
+                            Text("Нет игроков", color = OnSurfaceVariant)
+                            Text("Нажмите + для добавления", color = OnSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        }
                     }
-                }
-            } else {
-                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(state.players, key = { it.id }) { player ->
-                        PlayerRow(
-                            player = player,
-                            onDetail = { navController.navigate(Routes.playerDetail(player.id)) },
-                            onDelete = { playerToDelete = player }
-                        )
+                } else {
+                    LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(state.players, key = { it.id }) { player ->
+                            PlayerRow(
+                                player = player,
+                                onDetail = { navController.navigate(Routes.playerDetail(player.id)) },
+                                onDelete = { playerToDelete = player }
+                            )
+                        }
                     }
                 }
             }
@@ -117,7 +123,9 @@ private fun PlayerRow(player: Player, onDetail: () -> Unit, onDelete: () -> Unit
 
 @Composable
 private fun QuickAddPlayerDialog(onAdd: (String, Gender) -> Unit, onDismiss: () -> Unit) {
-    var name by remember { mutableStateOf("") }; var gender by remember { mutableStateOf(Gender.MALE) }
+    var name by remember { mutableStateOf("") }
+    var gender by remember { mutableStateOf(Gender.MALE) }
+
     AlertDialog(onDismissRequest = onDismiss, containerColor = SurfaceBright, title = { Text("Новый игрок") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

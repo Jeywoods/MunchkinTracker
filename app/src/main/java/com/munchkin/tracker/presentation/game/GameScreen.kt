@@ -30,6 +30,7 @@ import androidx.navigation.NavController
 import com.munchkin.tracker.domain.model.Gender
 import com.munchkin.tracker.presentation.components.AppTopBar
 import com.munchkin.tracker.presentation.components.GameTimer
+import com.munchkin.tracker.presentation.components.MagicCircleBackground
 import com.munchkin.tracker.presentation.components.NotificationCard
 import com.munchkin.tracker.presentation.components.VoiceIndicator
 import com.munchkin.tracker.presentation.players.PlayerManagementViewModel
@@ -69,52 +70,79 @@ fun GameScreen(
                 }
             )
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(vertical = 16.dp)
-            ) {
-                item {
-                    VoiceIndicator(
-                        voiceState = state.voiceState,
-                        recognizedText = state.recognizedText,
-                        amplitude = amplitude,
-                        onMicClick = {
-                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                                vm.startVoiceListening()
-                            } else {
-                                permLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+            if (state.activeGame == null && !state.isLoading) {
+                VoiceIndicator(
+                    voiceState = state.voiceState,
+                    recognizedText = state.recognizedText,
+                    amplitude = amplitude,
+                    onMicClick = {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                            vm.startVoiceListening()
+                        } else {
+                            permLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                )
 
-                if (state.activeGame == null && !state.isLoading) {
-                    item { NoGamePlaceholder(onStart = { showNewGameConfirm = true }) }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    NoGamePlaceholder(onStart = { showNewGameConfirm = true })
                 }
-
-                items(state.players, key = { it.id }) { gp ->
-                    val flash = state.lastFlash[gp.id]
-                    SwipeablePlayerCard(
-                        gamePlayer = gp, winLevel = state.activeGame?.winLevel ?: 10, flashPositive = flash,
-                        onIncrement = { vm.changeLevel(gp, 1) }, onDecrement = { vm.changeLevel(gp, -1) },
-                        onPowerIncrement = { vm.changePower(gp.player.id, 1) },
-                        onPowerDecrement = { vm.changePower(gp.player.id, -1) },
-                        onSwipeUndo = { vm.undoLastPlayerAction(gp.player.id) },
-                        onGenderChange = { vm.updatePlayerGender(gp.player.id, it) },
-                        onPlayerUpdate = { p, r1, r2, c1, c2 -> vm.updatePlayerDetails(gp.player.id, p, r1, r2, c1, c2) },
-                        onNameChange = { vm.updatePlayerName(gp.player.id, it) }
-                    )
-                }
-
-                if (state.activeGame != null) {
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(vertical = 16.dp)
+                ) {
                     item {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            OutlinedButton(onClick = { showAddPlayer = true }, modifier = Modifier.weight(1f), colors = ButtonDefaults.outlinedButtonColors(contentColor = Primary), border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.5f))) {
-                                Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Добавить игрока")
+                        VoiceIndicator(
+                            voiceState = state.voiceState,
+                            recognizedText = state.recognizedText,
+                            amplitude = amplitude,
+                            onMicClick = {
+                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                    vm.startVoiceListening()
+                                } else {
+                                    permLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    items(state.players, key = { it.id }) { gp ->
+                        val flash = state.lastFlash[gp.id]
+                        PlayerCard(
+                            gamePlayer = gp,
+                            winLevel = state.activeGame?.winLevel ?: 10,
+                            flashPositive = flash,
+                            onIncrement = { vm.changeLevel(gp, 1) },
+                            onDecrement = { vm.changeLevel(gp, -1) },
+                            onPowerIncrement = { vm.changePower(gp.player.id, 1) },
+                            onPowerDecrement = { vm.changePower(gp.player.id, -1) },
+                            onGenderChange = { vm.updatePlayerGender(gp.player.id, it) },
+                            onPlayerUpdate = { p, r1, r2, c1, c2 -> vm.updatePlayerDetails(gp.player.id, p, r1, r2, c1, c2) },
+                            onNameChange = { vm.updatePlayerName(gp.player.id, it) }
+                        )
+                    }
+
+                    if (state.activeGame != null) {
+                        item {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedButton(onClick = { showAddPlayer = true }, modifier = Modifier.weight(1f), colors = ButtonDefaults.outlinedButtonColors(contentColor = Primary), border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.5f))) {
+                                    Icon(Icons.Default.PersonAdd, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Добавить игрока")
+                                }
+                                Button(onClick = { showEndGame = true }, colors = ButtonDefaults.buttonColors(containerColor = Secondary, contentColor = Background)) { Text("🏆", fontSize = 18.sp) }
                             }
-                            Button(onClick = { showEndGame = true }, colors = ButtonDefaults.buttonColors(containerColor = Secondary, contentColor = Background)) { Text("🏆", fontSize = 18.sp) }
                         }
                     }
                 }
@@ -147,12 +175,29 @@ fun GameScreen(
 
 @Composable
 private fun NoGamePlaceholder(onStart: () -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(Brush.verticalGradient(listOf(PrimaryContainer.copy(alpha = 0.3f), Background))).padding(40.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        MagicCircleBackground()
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             Text("⚔️", fontSize = 56.sp)
             Text("Нет активной игры", style = MaterialTheme.typography.headlineSmall, color = OnBackground)
-            Text("Нажмите кнопку ниже, чтобы начать новую игру", style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
-            Button(onClick = onStart, colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = Background)) { Icon(Icons.Default.PlayArrow, null); Spacer(Modifier.width(8.dp)); Text("Новая игра", fontWeight = FontWeight.Bold) }
+            Text("Нажмите кнопку ниже, чтобы начать новую игру",
+                style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
+            Button(
+                onClick = onStart,
+                colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = Background),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.Default.PlayArrow, null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Новая игра", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
@@ -165,9 +210,9 @@ private fun NewGameSetupDialog(
     onDismiss: () -> Unit
 ) {
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
-    var winLevel by remember { mutableIntStateOf(10) }
     var newPlayerName by remember { mutableStateOf("") }
     var newPlayerGender by remember { mutableStateOf(Gender.MALE) }
+    var nameError by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -176,66 +221,105 @@ private fun NewGameSetupDialog(
         title = { Text("⚔️ Новая игра") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Уровень победы: $winLevel", color = OnSurfaceVariant)
-                Slider(
-                    value = winLevel.toFloat(),
-                    onValueChange = { value -> winLevel = value.toInt() },
-                    valueRange = 5f..15f,
-                    steps = 9,
-                    colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
-                )
-                HorizontalDivider(color = Outline)
                 Text("Выберите игроков:", color = OnSurfaceVariant)
-                allPlayers.forEach { player ->
-                    val isSelected = player.id in selectedIds
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (isSelected) PrimaryContainer else SurfaceVariant)
-                            .clickable {
-                                selectedIds = if (isSelected) selectedIds - player.id
-                                else selectedIds + player.id
-                            }
-                            .padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = isSelected,
-                            onCheckedChange = { checked ->
-                                selectedIds = if (checked) selectedIds + player.id
-                                else selectedIds - player.id
-                            },
-                            colors = CheckboxDefaults.colors(checkedColor = Primary)
-                        )
-                        Text(player.name, modifier = Modifier.weight(1f), color = OnBackground)
-                        Text(player.gender.icon, color = OnSurfaceVariant)
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 240.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(allPlayers) { player ->
+                        val isSelected = player.id in selectedIds
+                        val canSelect = selectedIds.size < 10 || isSelected
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(if (isSelected) PrimaryContainer else SurfaceVariant)
+                                .then(
+                                    if (canSelect) Modifier.clickable {
+                                        selectedIds = if (isSelected) selectedIds - player.id
+                                        else selectedIds + player.id
+                                    } else Modifier
+                                )
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = isSelected,
+                                onCheckedChange = { checked ->
+                                    if (canSelect) {
+                                        selectedIds = if (checked) selectedIds + player.id
+                                        else selectedIds - player.id
+                                    }
+                                },
+                                colors = CheckboxDefaults.colors(checkedColor = Primary),
+                                enabled = canSelect
+                            )
+                            Text(
+                                player.name,
+                                modifier = Modifier.weight(1f),
+                                color = if (canSelect) OnBackground else OnSurfaceVariant
+                            )
+                            Text(player.gender.icon, color = OnSurfaceVariant)
+                        }
                     }
                 }
+
+                if (selectedIds.size >= 10) {
+                    Text(
+                        "Максимум 10 игроков",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceVariant
+                    )
+                }
+
                 HorizontalDivider(color = Outline)
                 Text("Добавить нового:", color = OnSurfaceVariant)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
-                        newPlayerName, { newPlayerName = it },
+                        newPlayerName,
+                        onValueChange = {
+                            newPlayerName = it
+                            nameError = null
+                        },
                         label = { Text("Имя") },
                         singleLine = true,
+                        isError = nameError != null,
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary)
                     )
                     IconButton(onClick = {
                         if (newPlayerName.isNotBlank()) {
-                            onCreatePlayer(newPlayerName.trim(), newPlayerGender)
-                            newPlayerName = ""
+                            val nameExists = allPlayers.any {
+                                it.name.equals(newPlayerName.trim(), ignoreCase = true)
+                            }
+                            if (!nameExists) {
+                                onCreatePlayer(newPlayerName.trim(), newPlayerGender)
+                                newPlayerName = ""
+                                nameError = null
+                            } else {
+                                nameError = "Игрок с таким именем уже существует"
+                            }
                         }
                     }) {
                         Icon(Icons.Default.Add, "Добавить", tint = Primary)
                     }
                 }
+                if (nameError != null) {
+                    Text(
+                        nameError!!,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = LevelDown
+                    )
+                }
             }
         },
         confirmButton = {
             Button(
-                onClick = { onStart(selectedIds.toList(), winLevel) },
+                onClick = { onStart(selectedIds.toList(), 10) },
                 enabled = selectedIds.isNotEmpty(),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = Background)
             ) {

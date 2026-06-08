@@ -19,8 +19,19 @@ class MunchkinRepository @Inject constructor(
     fun getAllPlayers(): Flow<List<Player>> =
         playerDao.getAllPlayers().map { list -> list.map { it.toDomain() } }
 
-    suspend fun insertPlayer(name: String, gender: Gender): Long =
-        playerDao.insertPlayer(PlayerEntity(name = name, gender = gender.name.lowercase()))
+    suspend fun insertPlayer(name: String, gender: Gender): Long {
+        val existing = playerDao.getPlayerByName(name.trim())
+        if (existing != null) {
+            return existing.id
+        }
+        return playerDao.insertPlayer(
+            PlayerEntity(
+                name = name.trim(),
+                gender = gender.name.lowercase(),
+                power = 1
+            )
+        )
+    }
 
     suspend fun updatePlayer(player: Player) =
         playerDao.updatePlayer(player.toEntity())
@@ -60,8 +71,20 @@ class MunchkinRepository @Inject constructor(
             }.filterNotNull()
         }
 
-    suspend fun addPlayerToGame(gameId: Long, playerId: Long): Long =
-        gamePlayerDao.insertGamePlayer(GamePlayerEntity(gameId = gameId, playerId = playerId))
+    suspend fun addPlayerToGame(gameId: Long, playerId: Long): Long {
+        val player = playerDao.getPlayerById(playerId)
+        player?.let {
+            playerDao.updatePlayer(
+                it.copy(
+                    race1 = "Человек",
+                    race2 = null,
+                    class1 = null,
+                    class2 = null
+                )
+            )
+        }
+        return gamePlayerDao.insertGamePlayer(GamePlayerEntity(gameId = gameId, playerId = playerId))
+    }
 
     suspend fun updateLevel(gamePlayerId: Long, oldLevel: Int, newLevel: Int, source: String) {
         gamePlayerDao.updateLevel(gamePlayerId, newLevel)

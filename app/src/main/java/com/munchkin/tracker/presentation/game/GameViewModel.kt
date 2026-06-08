@@ -146,7 +146,22 @@ class GameViewModel @Inject constructor(
         }
     }
 
-    fun undoLastAction() = undoGlobal()
+    fun undoLastAction() {
+        val action = globalUndoStack.removeLastOrNull() ?: return
+        viewModelScope.launch {
+            action()
+            val game = _state.value.activeGame ?: return@launch
+            val players = repo.getGamePlayers(game.id).first()
+            _state.update { state ->
+                state.copy(
+                    players = players.map { gp ->
+                        gp.copy(lastDelta = state.lastDeltas[gp.id] ?: 0)
+                    },
+                    snackbarMessage = "Отменено"
+                )
+            }
+        }
+    }
 
     fun undoLastPlayerAction(playerId: Long) {
         val stack = playerUndoStacks[playerId] ?: return
@@ -154,9 +169,20 @@ class GameViewModel @Inject constructor(
         globalUndoStack.remove(action)
         viewModelScope.launch {
             action()
-            _state.update { it.copy(lastDeltas = it.lastDeltas - playerId) }
+            val game = _state.value.activeGame ?: return@launch
+            val players = repo.getGamePlayers(game.id).first()
+            _state.update { state ->
+                state.copy(
+                    players = players.map { gp ->
+                        gp.copy(lastDelta = state.lastDeltas[gp.id] ?: 0)
+                    },
+                    lastDeltas = state.lastDeltas - playerId,
+                    snackbarMessage = "Отменено"
+                )
+            }
         }
     }
+
 
     private fun undoGlobal() {
         val action = globalUndoStack.removeLastOrNull() ?: return
@@ -169,9 +195,21 @@ class GameViewModel @Inject constructor(
         if (newLevel == oldLevel) return
         val playerId = gamePlayer.player.id
         viewModelScope.launch {
+            // Обновляем уровень
             repo.updateLevel(gamePlayer.id, oldLevel, newLevel, "manual")
+
+            // Обновляем силу на ту же дельту
+            val newPower = (gamePlayer.player.power + delta).coerceIn(0, 50)
+            val updatedPlayer = gamePlayer.player.copy(power = newPower)
+            repo.updatePlayer(updatedPlayer)
+
             flashCard(gamePlayer.id, delta > 0)
             _state.update { s -> s.copy(
+                players = s.players.map { gp ->
+                    if (gp.id == gamePlayer.id) {
+                        gp.copy(lastDelta = delta, currentLevel = newLevel, player = updatedPlayer)
+                    } else gp
+                },
                 lastDeltas = s.lastDeltas + (gamePlayer.id to delta),
                 snackbarMessage = "${gamePlayer.player.name}, уровень $newLevel"
             )}
@@ -180,6 +218,7 @@ class GameViewModel @Inject constructor(
         }
         val undoAction: suspend () -> Unit = {
             repo.updateLevel(gamePlayer.id, newLevel, oldLevel, "undo")
+            repo.updatePlayer(gamePlayer.player.copy(power = gamePlayer.player.power - delta))
         }
         globalUndoStack.add(undoAction)
         playerUndoStacks.getOrPut(playerId) { mutableListOf() }.add(undoAction)
@@ -189,7 +228,7 @@ class GameViewModel @Inject constructor(
 
     fun changePower(playerId: Long, delta: Int) {
         val gp = _state.value.players.find { it.player.id == playerId } ?: return
-        val newPower = (gp.player.power + delta).coerceIn(0, 200)
+        val newPower = (gp.player.power + delta).coerceIn(0, 50)
         if (newPower == gp.player.power) return
         applyPlayerUpdate(playerId, gp.player.copy(power = newPower))
     }
@@ -257,6 +296,8 @@ class GameViewModel @Inject constructor(
 
             timerJob?.cancel()
             _state.update { it.copy(snackbarMessage = "Игра завершена! 🏆") }
+            delay(3000)
+            clearSnackbar()
         }
     }
 

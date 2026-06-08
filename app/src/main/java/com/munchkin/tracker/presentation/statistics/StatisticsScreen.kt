@@ -31,6 +31,7 @@ import com.munchkin.tracker.data.export.CsvExportHelper
 import com.munchkin.tracker.domain.model.*
 import com.munchkin.tracker.presentation.components.AppTopBar
 import com.munchkin.tracker.presentation.components.ConfirmDialog
+import com.munchkin.tracker.presentation.components.MagicCircleBackground
 import com.munchkin.tracker.presentation.navigation.Routes
 import com.munchkin.tracker.ui.theme.*
 import java.text.SimpleDateFormat
@@ -85,10 +86,16 @@ fun StatisticsScreen(
                         })
                 }
             }
-            when (selectedTab) {
-                0 -> RecentGamesTab(state.recentGames, vm)
-                1 -> PlayerStatsTab(state.summary, navController)
-                2 -> ChartsTab(state)
+
+            // Контент с кругом на фоне
+            Box(modifier = Modifier.fillMaxSize().weight(1f)) {
+                MagicCircleBackground(alpha = 0.5f)
+
+                when (selectedTab) {
+                    0 -> RecentGamesTab(state.recentGames, vm)
+                    1 -> PlayerStatsTab(state.summary, navController)
+                    2 -> ChartsTab(state)
+                }
             }
         }
     }

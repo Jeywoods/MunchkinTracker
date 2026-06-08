@@ -13,6 +13,9 @@ interface PlayerDao {
     @Query("SELECT * FROM players WHERE id = :id")
     suspend fun getPlayerById(id: Long): PlayerEntity?
 
+    @Query("SELECT * FROM players WHERE LOWER(name) = LOWER(:name) LIMIT 1")
+    suspend fun getPlayerByName(name: String): PlayerEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlayer(player: PlayerEntity): Long
 
@@ -25,7 +28,6 @@ interface PlayerDao {
     @Query("SELECT COUNT(*) FROM players")
     suspend fun getPlayerCount(): Int
 
-    // Распределение игроков по полу
     @Query("""
         SELECT gender, COUNT(*) as count
         FROM players
@@ -55,11 +57,9 @@ interface GameDao {
     @Query("UPDATE games SET is_active = 0, duration = :duration WHERE id = :id")
     suspend fun finishGame(id: Long, duration: Long)
 
-    // Удаление игры
     @Query("DELETE FROM games WHERE id = :id")
     suspend fun deleteGame(id: Long)
 
-    // Средняя длительность завершённых игр
     @Query("""
         SELECT AVG(duration) as avg_duration,
                COUNT(*) as total_games,
@@ -107,7 +107,8 @@ interface GamePlayerDao {
         SELECT p.gender, COUNT(*) as wins
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE gp.is_winner = 1
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE gp.is_winner = 1 AND g.is_active = 0
         GROUP BY p.gender
     """)
     suspend fun getWinsByGender(): List<GenderWinCount>
@@ -116,7 +117,8 @@ interface GamePlayerDao {
         SELECT p.id, p.name, p.gender, COUNT(*) as wins
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE gp.is_winner = 1
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE gp.is_winner = 1 AND g.is_active = 0
         GROUP BY p.id
         ORDER BY wins DESC
         LIMIT 10
@@ -129,79 +131,77 @@ interface GamePlayerDao {
     """)
     suspend fun getGamesByPlayer(playerId: Long): List<GamePlayerEntity>
 
-    // Победы по классам
     @Query("""
         SELECT p.class1, p.class2, COUNT(*) as wins
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE gp.is_winner = 1 AND (p.class1 IS NOT NULL OR p.class2 IS NOT NULL)
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE gp.is_winner = 1 AND g.is_active = 0
         GROUP BY p.class1, p.class2
     """)
     suspend fun getWinsByClass(): List<ClassWinCount>
 
-    // Победы по расам
     @Query("""
         SELECT p.race1, p.race2, COUNT(*) as wins
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE gp.is_winner = 1 AND (p.race1 IS NOT NULL OR p.race2 IS NOT NULL)
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE gp.is_winner = 1 AND g.is_active = 0
         GROUP BY p.race1, p.race2
     """)
     suspend fun getWinsByRace(): List<RaceWinCount>
 
-    // Популярность классов (участие в играх)
     @Query("""
         SELECT p.class1, p.class2, COUNT(*) as games_count
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE p.class1 IS NOT NULL OR p.class2 IS NOT NULL
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE g.is_active = 0
         GROUP BY p.class1, p.class2
     """)
     suspend fun getClassPopularity(): List<ClassPopularityCount>
 
-    // Популярность рас (участие в играх)
     @Query("""
         SELECT p.race1, p.race2, COUNT(*) as games_count
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE p.race1 IS NOT NULL OR p.race2 IS NOT NULL
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE g.is_active = 0
         GROUP BY p.race1, p.race2
     """)
     suspend fun getRacePopularity(): List<RacePopularityCount>
 
-    // Победы и участия по классам для эффективности
     @Query("""
         SELECT p.class1, p.class2,
                COUNT(*) as total_games,
                SUM(CASE WHEN gp.is_winner = 1 THEN 1 ELSE 0 END) as wins
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE p.class1 IS NOT NULL OR p.class2 IS NOT NULL
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE g.is_active = 0
         GROUP BY p.class1, p.class2
     """)
     suspend fun getClassEfficiency(): List<ClassEfficiencyCount>
 
-    // Победы и участия по расам для эффективности
     @Query("""
         SELECT p.race1, p.race2,
                COUNT(*) as total_games,
                SUM(CASE WHEN gp.is_winner = 1 THEN 1 ELSE 0 END) as wins
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE p.race1 IS NOT NULL OR p.race2 IS NOT NULL
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE g.is_active = 0
         GROUP BY p.race1, p.race2
     """)
     suspend fun getRaceEfficiency(): List<RaceEfficiencyCount>
 
-    // Топ комбинаций класс+раса по победам
     @Query("""
         SELECT p.class1, p.class2, p.race1, p.race2,
                COUNT(*) as wins
         FROM game_players gp
         INNER JOIN players p ON p.id = gp.player_id
-        WHERE gp.is_winner = 1 
-          AND (p.class1 IS NOT NULL OR p.class2 IS NOT NULL)
-          AND (p.race1 IS NOT NULL OR p.race2 IS NOT NULL)
+        INNER JOIN games g ON g.id = gp.game_id
+        WHERE gp.is_winner = 1 AND g.is_active = 0
         GROUP BY p.class1, p.class2, p.race1, p.race2
         ORDER BY wins DESC
         LIMIT 10
@@ -209,7 +209,7 @@ interface GamePlayerDao {
     suspend fun getTopClassRaceCombos(): List<ClassRaceComboCount>
 }
 
-// ─── Data classes для результатов запросов ─────────────────────────────────
+// ─── Data classes ────────────────────────────────────────────────────────────
 data class GenderWinCount(val gender: String, val wins: Int)
 data class GenderCount(val gender: String, val count: Int)
 data class PlayerWinCount(val id: Long, val name: String, val gender: String, val wins: Int)

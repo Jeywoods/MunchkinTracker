@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.munchkin.tracker.presentation.components.AppTopBar
+import com.munchkin.tracker.presentation.components.MagicCircleBackground
 import com.munchkin.tracker.ui.theme.*
 
 @Composable
@@ -31,37 +32,52 @@ fun SettingsScreen(
     Box(modifier = Modifier.fillMaxSize().background(Background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             AppTopBar("Настройки")
-            LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                item { SectionLabel("Голосовое управление") }
-                item {
-                    SettingsCard {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            ToggleRow(Icons.Default.Mic, "Режим «всегда слушает»", "Активируется фразой «Эй Манчкин»", state.alwaysListenEnabled, vm::setAlwaysListen)
-                            HorizontalDivider(color = Outline)
-                            ToggleRow(Icons.AutoMirrored.Filled.VolumeUp, "Голосовые подтверждения (TTS)", "Озвучивать результат команды", state.ttsEnabled, vm::setTtsEnabled)
-                            HorizontalDivider(color = Outline)
-                            Text("Горячее слово: «${state.hotword}»", style = MaterialTheme.typography.titleSmall, color = OnBackground)
+
+            Box(modifier = Modifier.fillMaxSize().weight(1f)) {
+                MagicCircleBackground(alpha = 0.5f)
+
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item { SectionLabel("Голосовое управление") }
+                    item {
+                        SettingsCard {
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                ToggleRow(Icons.Default.Mic, "Режим «всегда слушает»", "Активируется фразой «Эй Манчкин»", state.alwaysListenEnabled, vm::setAlwaysListen)
+                                HorizontalDivider(color = Outline)
+                                ToggleRow(Icons.AutoMirrored.Filled.VolumeUp, "Голосовые подтверждения (TTS)", "Озвучивать результат команды", state.ttsEnabled, vm::setTtsEnabled)
+                                HorizontalDivider(color = Outline)
+                                Text("Горячее слово: «${state.hotword}»", style = MaterialTheme.typography.titleSmall, color = OnBackground)
+                            }
                         }
                     }
+                    item { SectionLabel("О приложении") }
+                    item { SettingsCard { InfoRow(Icons.Default.Info, "Версия", "1.0.0") } }
                 }
-                item { SectionLabel("О приложении") }
-                item { SettingsCard { InfoRow(Icons.Default.Info, "Версия", "1.0.0") } }
             }
         }
     }
 }
 
 @Composable
-private fun SectionLabel(text: String) { Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = Primary, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)) }
+private fun SectionLabel(text: String) {
+    Text(text.uppercase(), style = MaterialTheme.typography.labelMedium, color = Primary, modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp))
+}
 
 @Composable
-private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) { Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(SurfaceVariant).padding(16.dp), content = content) }
+private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(SurfaceVariant).padding(16.dp), content = content)
+}
 
 @Composable
 private fun ToggleRow(icon: ImageVector, title: String, subtitle: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Icon(icon, null, tint = Primary, modifier = Modifier.size(22.dp))
-        Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleSmall, color = OnBackground); Text(subtitle, style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant) }
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, color = OnBackground)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant)
+        }
         Switch(checked, onCheckedChange, colors = SwitchDefaults.colors(checkedThumbColor = Background, checkedTrackColor = Primary))
     }
 }
@@ -69,6 +85,8 @@ private fun ToggleRow(icon: ImageVector, title: String, subtitle: String, checke
 @Composable
 private fun InfoRow(icon: ImageVector, label: String, value: String) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Icon(icon, null, tint = OnSurfaceVariant, modifier = Modifier.size(20.dp)); Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = OnBackground); Text(value, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
+        Icon(icon, null, tint = OnSurfaceVariant, modifier = Modifier.size(20.dp))
+        Text(label, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, color = OnBackground)
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
     }
 }

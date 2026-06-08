@@ -123,7 +123,7 @@ fun PlayerCard(
                     )
                 }
 
-                // lastDelta — левее иконки пола
+                // lastDelta
                 val delta = gamePlayer.lastDelta
                 if (delta != 0) {
                     val deltaColor = if (delta > 0) LevelUp else LevelDown
@@ -189,7 +189,7 @@ fun PlayerCard(
                             .background(if (isWinLevel) Brush.radialGradient(listOf(SecondaryContainer, Background)) else Brush.radialGradient(listOf(SurfaceBright, Background)))) {
                             Text(text = level.toString(), fontSize = if (level >= 10) 24.sp else 28.sp, fontWeight = FontWeight.Black, color = if (isWinLevel) GoldGlow else OnBackground)
                         }
-                        Button(onClick = onIncrement, enabled = level < 20,
+                        Button(onClick = onIncrement, enabled = level < 10,
                             colors = ButtonDefaults.buttonColors(containerColor = LevelUp.copy(alpha = 0.15f), contentColor = LevelUp, disabledContainerColor = SurfaceVariant, disabledContentColor = OnSurfaceVariant),
                             contentPadding = PaddingValues(0.dp), modifier = Modifier.size(36.dp)) { Text("+1", fontWeight = FontWeight.Bold, fontSize = 14.sp) }
                     }
@@ -205,14 +205,13 @@ fun PlayerCard(
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.size(56.dp).clip(RoundedCornerShape(14.dp)).background(SurfaceBright)) {
                             Text(text = "${gamePlayer.player.power}", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = OnBackground)
                         }
-                        Button(onClick = onPowerIncrement, enabled = gamePlayer.player.power < 200,
+                        Button(onClick = onPowerIncrement, enabled = gamePlayer.player.power < 50,
                             colors = ButtonDefaults.buttonColors(containerColor = LevelUp.copy(alpha = 0.15f), contentColor = LevelUp, disabledContainerColor = SurfaceVariant, disabledContentColor = OnSurfaceVariant),
                             contentPadding = PaddingValues(0.dp), modifier = Modifier.size(36.dp)) { Text("+1", fontWeight = FontWeight.Bold, fontSize = 14.sp) }
                     }
                 }
             }
 
-            // ── Progress bar ────────────────────────────────────────────────
             val progress = (level.toFloat() / winLevel).coerceIn(0f, 1f)
             LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
                 color = when { isWinLevel -> GoldGlow; isNearWin -> Secondary; else -> Primary }, trackColor = Outline)
@@ -228,7 +227,6 @@ fun PlayerCard(
 
 @Composable
 private fun PlayerEditDialog(player: Player, onSave: (Int, String?, String?, String?, String?) -> Unit, onDismiss: () -> Unit) {
-    var power by remember { mutableIntStateOf(player.power) }
     var race1 by remember { mutableStateOf(player.race1 ?: "") }
     var race2 by remember { mutableStateOf(player.race2 ?: "") }
     var class1 by remember { mutableStateOf(player.class1 ?: "") }
@@ -236,39 +234,126 @@ private fun PlayerEditDialog(player: Player, onSave: (Int, String?, String?, Str
     val availableRaces = PlayerRace.entries.map { it.label }
     val availableClasses = PlayerClass.entries.map { it.label }
 
-    AlertDialog(onDismissRequest = onDismiss, containerColor = SurfaceBright, modifier = Modifier.fillMaxWidth(), title = { Text("Параметры: ${player.name}") },
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = SurfaceBright,
+        modifier = Modifier.fillMaxWidth(),
+        title = { Text("Параметры: ${player.name}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Сила: $power", style = MaterialTheme.typography.labelMedium, color = OnSurfaceVariant)
-                Slider(value = power.toFloat(), onValueChange = { power = it.toInt() }, valueRange = 0f..200f, steps = 39, colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary))
-                Text("Раса 1:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant)
-                RaceClassDropdown(selected = race1, options = availableRaces.filter { it != race2 || it.isBlank() }, onSelect = { race1 = it }, label = "Выберите расу")
+                // ── Раса 1 ──
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Раса 1:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant)
+                    if (race1.isNotBlank() && race1 != "Человек") {
+                        TextButton(onClick = { race1 = "Человек" }) {
+                            Text("Убрать", color = Primary, fontSize = 14.sp)
+                        }
+                    }
+                }
+                RaceClassDropdown(
+                    selected = race1,
+                    options = availableRaces.filter { it != race2 || it.isBlank() },
+                    onSelect = { race1 = it },
+                    label = "Выберите расу"
+                )
+
+                // ── Раса 2 ──
                 if (race1.isNotBlank()) {
-                    Text("Раса 2:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant)
-                    RaceClassDropdown(selected = race2, options = availableRaces.filter { it != race1 || it.isBlank() }, onSelect = { race2 = it }, label = "Вторая раса")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Раса 2:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant)
+                        if (race2.isNotBlank()) {
+                            TextButton(onClick = { race2 = "" }) {
+                                Text("Убрать", color = Primary, fontSize = 14.sp)
+                            }
+                        }
+                    }
+                    RaceClassDropdown(
+                        selected = race2,
+                        options = availableRaces.filter { it != race1 || it.isBlank() },
+                        onSelect = { race2 = it },
+                        label = "Вторая раса"
+                    )
                 }
-                Text("Класс 1:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant)
-                RaceClassDropdown(selected = class1, options = availableClasses.filter { it != class2 || it.isBlank() }, onSelect = { class1 = it }, label = "Выберите класс")
-                if (class1.isNotBlank()) {
+
+                // ── Класс 1 ──
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Класс 1:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant)
+                    if (class1.isNotBlank()) {
+                        TextButton(onClick = {
+                            class1 = class2
+                            class2 = ""
+                        }) {
+                            Text("Убрать", color = Primary, fontSize = 14.sp)
+                        }
+                    }
+                }
+                RaceClassDropdown(
+                    selected = class1,
+                    options = availableClasses.filter { it != class2 || it.isBlank() },
+                    onSelect = { class1 = it },
+                    label = "Выберите класс"
+                )
+
+                // ── Класс 2 ──
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Класс 2:", style = MaterialTheme.typography.labelSmall, color = OnSurfaceVariant)
-                    RaceClassDropdown(selected = class2, options = availableClasses.filter { it != class1 || it.isBlank() }, onSelect = { class2 = it }, label = "Второй класс")
+                    if (class2.isNotBlank()) {
+                        TextButton(onClick = { class2 = "" }) {
+                            Text("Убрать", color = Primary, fontSize = 14.sp)
+                        }
+                    }
                 }
+                RaceClassDropdown(
+                    selected = class2,
+                    options = availableClasses.filter { it != class1 || it.isBlank() },
+                    onSelect = { class2 = it },
+                    label = "Второй класс"
+                )
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(power, race1.ifBlank { null }, race2.ifBlank { null }, class1.ifBlank { null }, class2.ifBlank { null }) }) { Text("Сохранить", color = Primary) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена", color = OnSurfaceVariant) } })
+        confirmButton = {
+            TextButton(onClick = {
+                onSave(
+                    player.power,
+                    race1.ifBlank { null },
+                    race2.ifBlank { null },
+                    class1.ifBlank { null },
+                    class2.ifBlank { null }
+                )
+            }) {
+                Text("Сохранить", color = Primary)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Отмена", color = OnSurfaceVariant) }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RaceClassDropdown(selected: String, options: List<String>, onSelect: (String) -> Unit, label: String) {
+private fun RaceClassDropdown(
+    selected: String,
+    options: List<String>,
+    onSelect: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier
+) {
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        OutlinedTextField(value = selected, onValueChange = {}, readOnly = true, label = { Text(label) },
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor().fillMaxWidth(), colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary))
+            modifier = modifier.menuAnchor(),
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Primary)
+        )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            options.forEach { option -> DropdownMenuItem(text = { Text(option) }, onClick = { onSelect(option); expanded = false }) }
+            options.forEach { option ->
+                DropdownMenuItem(text = { Text(option) }, onClick = { onSelect(option); expanded = false })
+            }
         }
     }
 }
