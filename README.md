@@ -1,8 +1,15 @@
 # 🗡️ Манчкин Трекер
 
-Android-приложение на Kotlin для отслеживания уровней игроков во время настольной игры Манчкин.
+> Android-приложение на Kotlin для отслеживания уровней игроков во время настольной игры Манчкин.
 
-## Стек технологий
+![Android](https://img.shields.io/badge/Android-minSdk%2026-3DDC84?logo=android&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white)
+![Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
+![LLM](https://img.shields.io/badge/LLM-GPT--OSS%20120B-FFB74D)
+
+---
+
+## ⚙️ Стек технологий
 
 | Слой | Библиотека |
 |---|---|
@@ -13,34 +20,38 @@ Android-приложение на Kotlin для отслеживания уро�
 | Навигация | Navigation Compose |
 | Настройки | DataStore Preferences |
 | Голос | SpeechRecognizer API + TTS + Vosk |
+| LLM | OpenRouter API (GPT-OSS 120B) |
+| HTTP | OkHttp + Gson |
 
-## Архитектура
+---
 
+## 🏛️ Архитектура
 
 ```
 com.munchkin.tracker/
 ├── data/
-│ ├── dao/ – PlayerDao, GameDao, GamePlayerDao, LevelChangeDao, StatsDao
-│ ├── entity/ – PlayerEntity, GameEntity, GamePlayerEntity, LevelChangeEntity
-│ ├── export/ – CsvExportHelper
-│ └── repository/ – MunchkinRepository
+│   ├── dao/         – PlayerDao, GameDao, GamePlayerDao, LevelChangeDao, StatsDao
+│   ├── entity/      – PlayerEntity, GameEntity, GamePlayerEntity, LevelChangeEntity
+│   ├── export/      – CsvExportHelper
+│   └── repository/  – MunchkinRepository
 ├── domain/
-│ └── model/ – Enums, Models, StatsModels
+│   └── model/       – Enums, Models, StatsModels
 ├── presentation/
-│ ├── components/ – AppTopBar, AppBottomBar, VoiceIndicator, MagicCircleBackground...
-│ ├── game/ – GameScreen, GameViewModel, PlayerCard, EndGameDialog...
-│ ├── history/ – HistoryScreen, HistoryViewModel
-│ ├── navigation/ – MunchkinNavGraph, Routes
-│ ├── players/ – PlayerManagementScreen, PlayerDetailScreen, ViewModel
-│ ├── settings/ – SettingsScreen, SettingsViewModel
-│ └── statistics/ – StatisticsScreen, ChartsTab, RecentGamesTab, PlayerStatsTab...
-├── ui/theme/ – Color, Theme, Typography
-├── voice/ – VoiceManager, CommandParser, HotwordManager
-└── di/ – DatabaseModule (Hilt)
+│   ├── components/  – AppTopBar, AppBottomBar, VoiceIndicator, MagicCircleBackground...
+│   ├── game/        – GameScreen, GameViewModel, PlayerCard, EndGameDialog...
+│   ├── history/     – HistoryScreen, HistoryViewModel
+│   ├── navigation/  – MunchkinNavGraph, Routes
+│   ├── players/     – PlayerManagementScreen, PlayerDetailScreen, ViewModel
+│   ├── settings/    – SettingsScreen, SettingsViewModel
+│   └── statistics/  – StatisticsScreen, ChartsTab, RecentGamesTab, PlayerStatsTab...
+├── ui/theme/        – Color, Theme, Typography
+├── voice/           – VoiceManager, LLMParser, HotwordManager
+└── di/              – DatabaseModule (Hilt)
 ```
 
+---
 
-## Цветовая палитра «Frozen North»
+## 🎨 Цветовая палитра «Frozen North»
 
 | Токен | HEX | Назначение |
 |---|---|---|
@@ -48,70 +59,106 @@ com.munchkin.tracker/
 | Surface | `#1B2D41` | Карточки |
 | Primary | `#64B5F6` | Голубой акцент |
 | Secondary | `#FFB74D` | Тёплый оранжевый |
-| MaleColor | `#448AFF` | Синий (мужской пол) |
-| FemaleColor | `#E91E63` | Розовый (женский пол) |
+| MaleColor | `#448AFF` | Синий (♂ мужской пол) |
+| FemaleColor | `#E91E63` | Розовый (♀ женский пол) |
 | GoldGlow | `#FFD700` | Победное золото |
 | LevelUp | `#4CAF50` | Зелёная вспышка +1 |
 | LevelDown | `#F44336` | Красная вспышка -1 |
 
-## Функционал
+---
 
-### Главный экран (GameScreen)
+## ⚔️ Функционал
+
+### 🎮 Главный экран (GameScreen)
 - Карточки игроков с анимированной вспышкой при изменении уровня
 - Прогресс-бар до уровня победы
 - Золотая обводка и корона на победном уровне
-- Таймер игры
-- Кнопка отмены последнего действия
+- Таймер игры и кнопка отмены последнего действия
 - Добавление игроков из списка или создание новых
+- Магический круг на фоне при отсутствии активной игры
 
-### Голосовое управление
-- Кнопка микрофона: мгновенный ввод
-- Режим «всегда слушает»: «Эй Манчкин» → активация
-- Команды:
-  - `«Имя плюс два»` — увеличить уровень
-  - `«Имя минус один»` — уменьшить уровень
-  - `«Имя уровень пять»` — установить уровень
-  - `«Новая игра»` — начать новую игру
-  - `«Конец игры Имя победил»` — завершить
-  - `«Отмена»` — отменить последнее
-- TTS-подтверждение действий
+### 🎤 Голосовое управление с LLM
 
-### Редактирование персонажа
+```
+[Vosk: «Эй Манчкин»] → [SpeechRecognizer] → [OpenRouter LLM] → [JSON → UI] → [TTS: «Готово»]
+```
+
+- **Hotword**: Vosk распознаёт фразу «Эй Манчкин» — активация слушателя (оффлайн)
+- **Распознавание**: Google SpeechRecognizer преобразует речь в текст
+- **LLM-парсер**: OpenRouter (GPT-OSS 120B) анализирует текст и возвращает JSON с действиями
+- **Естественная речь**: понимает падежи, синонимы, сложные команды
+- **Несколько действий** в одной фразе: «Измени Владу расу на эльф и класс на воин»
+- **Несколько игроков**: «Илье уровень пять, а Диме силу десять»
+- **Авто-определение** `class1`/`class2`: «добавь класс волшебник» → `class2`
+- **Защита от дубликатов**: нельзя установить одинаковые классы/расы
+- Микрофон работает как переключатель: нажал — слушает, ещё раз — останавливает
+
+### 🧙 Редактирование персонажа
 - Изменение имени по тапу
 - Выбор расы и класса из выпадающих списков
 - Кнопка «Убрать» для сброса класса/расы
-- Смена пола по тапу на иконку ♂/♀
+- Смена пола ♂ / ♀ по тапу на иконку
+- Сила меняется автоматически с уровнем
+- Максимальный уровень: **10**
 
-### Статистика
-- **9 графиков**:
-  - Победы по полу
-  - Победы по классам и расам
-  - Популярность классов и рас
-  - Эффективность классов и рас (% побед)
-  - Средняя длительность игр
-  - Топ комбинаций класс+раса
+### 📊 Статистика
+- **9 графиков**: победы по полу, классам и расам; популярность и эффективность классов и рас; средняя длительность игр; топ комбинаций класс+раса
 - Топ-10 игроков
-- История завершённых игр
-- Детали игры с распределением уровней
+- История завершённых игр с деталями по уровням
 - Свайп для удаления игры
 - Экспорт в CSV
+- Статистика обновляется при переходе на вкладку
 
-### Настройки
+### ⚙️ Настройки
 - Голосовой режим «всегда слушает»
-- TTS-подтверждения
-- Горячее слово
+- TTS-подтверждения вкл/выкл
+- Настройка горячего слова
 
-## Сборка
+---
+
+## 🤖 LLM-интеграция
+
+Приложение использует **OpenRouter API** с моделью `openai/gpt-oss-120b:free` (бесплатно).
+
+### Поддерживаемые типы действий
+
+| Тип | Назначение | Пример |
+|---|---|---|
+| `set_power` | Установить силу | «сила 10» |
+| `set_race` | Первая раса | «раса эльф» |
+| `set_race2` | Вторая раса | «добавь расу дворф» |
+| `set_class` | Первый класс | «класс воин» |
+| `set_class2` | Второй класс | «добавь класс волшебник» |
+| `level_change` | Изменить уровень | «плюс два», «минус один» |
+| `set_level` | Установить уровень | «уровень пять» |
+
+### API-ключ
+
+Ключ хранится в `local.properties` (в `.gitignore`) и встраивается в ресурсы через `resValue`:
+
+```properties
+# local.properties
+openrouter.api.key=your_key_here
+```
+
+---
+
+## 🔨 Сборка
+
 ```bash
 ./gradlew assembleDebug
 ```
 
-Требования:
-- Android minSdk 26 (Android 8.0+)
-- Java 17
-- AGP 8.5+
+**Требования:**
+- Android minSdk **26** (Android 8.0+)
+- Java **17**
+- AGP **8.5+**
 
-## Разрешения
+---
 
-- `RECORD_AUDIO` — голосовое управление (запрашивается в рантайме)
-- `INTERNET` — SpeechRecognizer (Google STT)
+## 🔐 Разрешения
+
+| Разрешение | Назначение |
+|---|---|
+| `RECORD_AUDIO` | Голосовое управление (запрашивается в рантайме) |
+| `INTERNET` | SpeechRecognizer + OpenRouter API |
