@@ -7,86 +7,101 @@ Android-приложение на Kotlin для отслеживания уро�
 | Слой | Библиотека |
 |---|---|
 | UI | Jetpack Compose + Material Design 3 |
-| DI | Hilt 2.51 |
-| База данных | Room 2.6.1 |
-| Реактивность | Kotlin Coroutines 1.7.3 + Flow |
-| Навигация | Navigation Compose 2.7.7 |
-| Настройки | DataStore Preferences 1.1.1 |
-| Голос | SpeechRecognizer API + TTS |
+| DI | Hilt |
+| База данных | Room |
+| Реактивность | Kotlin Coroutines + Flow |
+| Навигация | Navigation Compose |
+| Настройки | DataStore Preferences |
+| Голос | SpeechRecognizer API + TTS + Vosk |
 
 ## Архитектура
+
 
 ```
 com.munchkin.tracker/
 ├── data/
-│   ├── dao/          – Room DAO интерфейсы
-│   ├── entity/       – Room Entity классы
-│   ├── export/       – CsvExportHelper
-│   └── repository/   – MunchkinRepository
+│ ├── dao/ – PlayerDao, GameDao, GamePlayerDao, LevelChangeDao, StatsDao
+│ ├── entity/ – PlayerEntity, GameEntity, GamePlayerEntity, LevelChangeEntity
+│ ├── export/ – CsvExportHelper
+│ └── repository/ – MunchkinRepository
 ├── domain/
-│   └── model/        – доменные модели, enum-ы
+│ └── model/ – Enums, Models, StatsModels
 ├── presentation/
-│   ├── components/   – переиспользуемые UI-компоненты
-│   ├── game/         – GameScreen + ViewModel + карточки
-│   ├── history/      – HistoryScreen + ViewModel
-│   ├── navigation/   – NavGraph
-│   ├── players/      – PlayerManagement + Detail
-│   ├── settings/     – SettingsScreen + ViewModel
-│   └── statistics/   – StatisticsScreen + ViewModel
-├── ui/theme/         – Palette, Typography, Theme
-├── voice/            – VoiceManager, CommandParser
-└── di/               – DatabaseModule (Hilt)
+│ ├── components/ – AppTopBar, AppBottomBar, VoiceIndicator, MagicCircleBackground...
+│ ├── game/ – GameScreen, GameViewModel, PlayerCard, EndGameDialog...
+│ ├── history/ – HistoryScreen, HistoryViewModel
+│ ├── navigation/ – MunchkinNavGraph, Routes
+│ ├── players/ – PlayerManagementScreen, PlayerDetailScreen, ViewModel
+│ ├── settings/ – SettingsScreen, SettingsViewModel
+│ └── statistics/ – StatisticsScreen, ChartsTab, RecentGamesTab, PlayerStatsTab...
+├── ui/theme/ – Color, Theme, Typography
+├── voice/ – VoiceManager, CommandParser, HotwordManager
+└── di/ – DatabaseModule (Hilt)
 ```
 
-## Цветовая палитра
+
+## Цветовая палитра «Frozen North»
 
 | Токен | HEX | Назначение |
 |---|---|---|
-| Background | `#0B0F1A` | Основной фон (тёмный сине-чёрный) |
-| Surface | `#131827` | Поверхность карточек |
-| Primary | `#00E5CC` | Electric Teal – акцент |
-| Secondary | `#FFB930` | Золотой – уровни, победитель |
-| Tertiary | `#FF5C8A` | Розовый – женский пол |
-| LevelUp | `#39FF14` | Неоновый зелёный – вспышка +1 |
-| LevelDown | `#FF3D5A` | Неоновый красный – вспышка -1 |
-| GoldGlow | `#FFD700` | Золотое свечение (уровни 9–10) |
+| Background | `#0D1B2A` | Ледяной фон |
+| Surface | `#1B2D41` | Карточки |
+| Primary | `#64B5F6` | Голубой акцент |
+| Secondary | `#FFB74D` | Тёплый оранжевый |
+| MaleColor | `#448AFF` | Синий (мужской пол) |
+| FemaleColor | `#E91E63` | Розовый (женский пол) |
+| GoldGlow | `#FFD700` | Победное золото |
+| LevelUp | `#4CAF50` | Зелёная вспышка +1 |
+| LevelDown | `#F44336` | Красная вспышка -1 |
 
 ## Функционал
 
 ### Главный экран (GameScreen)
 - Карточки игроков с анимированной вспышкой при изменении уровня
 - Прогресс-бар до уровня победы
-- Золотая обводка + ⚡ на предпобедном уровне
-- Корона 👑 на победном уровне
+- Золотая обводка и корона на победном уровне
 - Таймер игры
-- Свайп карточки вправо → отмена последнего действия
+- Кнопка отмены последнего действия
+- Добавление игроков из списка или создание новых
 
 ### Голосовое управление
 - Кнопка микрофона: мгновенный ввод
 - Режим «всегда слушает»: «Эй Манчкин» → активация
 - Команды:
-  - `«Вася плюс один»` — увеличить уровень
-  - `«Маша минус два»` — уменьшить уровень
-  - `«Петя уровень пять»` — установить уровень
-  - `«Новая игра»` — новая игра
-  - `«Конец игры Петя победил»` — завершить
+  - `«Имя плюс два»` — увеличить уровень
+  - `«Имя минус один»` — уменьшить уровень
+  - `«Имя уровень пять»` — установить уровень
+  - `«Новая игра»` — начать новую игру
+  - `«Конец игры Имя победил»` — завершить
   - `«Отмена»` — отменить последнее
-- Индикатор: серый/зелёный/красный/жёлтый
-- TTS-подтверждение: «Вася, уровень 7»
+- TTS-подтверждение действий
+
+### Редактирование персонажа
+- Изменение имени по тапу
+- Выбор расы и класса из выпадающих списков
+- Кнопка «Убрать» для сброса класса/расы
+- Смена пола по тапу на иконку ♂/♀
 
 ### Статистика
-- Победы по полу (визуальные бары)
-- Топ-10 игроков с медалями
-- История последних игр
-- Экспорт в CSV через системный шаринг
+- **9 графиков**:
+  - Победы по полу
+  - Победы по классам и расам
+  - Популярность классов и рас
+  - Эффективность классов и рас (% побед)
+  - Средняя длительность игр
+  - Топ комбинаций класс+раса
+- Топ-10 игроков
+- История завершённых игр
+- Детали игры с распределением уровней
+- Свайп для удаления игры
+- Экспорт в CSV
 
 ### Настройки
-- Уровень победы (5–15, по умолчанию 10)
-- Голосовой режим и TTS
-- Тёмная / светлая тема
+- Голосовой режим «всегда слушает»
+- TTS-подтверждения
+- Горячее слово
 
 ## Сборка
-
 ```bash
 ./gradlew assembleDebug
 ```
