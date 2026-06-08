@@ -110,7 +110,7 @@ class HotwordManager @Inject constructor(
                                                     text.contains("а манчкин", ignoreCase = true) ||
                                                     text.contains("манчкин", ignoreCase = true)
                                                 ) {
-                                                    Log.i(TAG, "🔥 HOTWORD DETECTED: $text")
+                                                    Log.i(TAG, "HOTWORD DETECTED: $text")
                                                     _hotwordDetected.value = true
                                                     Thread.sleep(1500)
                                                     _hotwordDetected.value = false

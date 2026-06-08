@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.munchkin.tracker.domain.model.Gender
+import com.munchkin.tracker.domain.model.VoiceState
 import com.munchkin.tracker.presentation.components.AppTopBar
 import com.munchkin.tracker.presentation.components.GameTimer
 import com.munchkin.tracker.presentation.components.MagicCircleBackground
@@ -75,10 +76,14 @@ fun GameScreen(
                     recognizedText = state.recognizedText,
                     amplitude = amplitude,
                     onMicClick = {
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                            vm.startVoiceListening()
+                        if (state.voiceState == VoiceState.RECORDING) {
+                            vm.stopVoiceListening()
                         } else {
-                            permLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                vm.startVoiceListening()
+                            } else {
+                                permLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
                         }
                     },
                     modifier = Modifier
@@ -108,10 +113,14 @@ fun GameScreen(
                             recognizedText = state.recognizedText,
                             amplitude = amplitude,
                             onMicClick = {
-                                if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                                    vm.startVoiceListening()
+                                if (state.voiceState == VoiceState.RECORDING) {
+                                    vm.stopVoiceListening()
                                 } else {
-                                    permLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                        vm.startVoiceListening()
+                                    } else {
+                                        permLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()

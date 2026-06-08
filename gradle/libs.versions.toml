@@ -10,6 +10,8 @@ lifecycle = "2.7.0"
 activityCompose = "1.9.0"
 coroutines = "1.7.3"
 vico = "2.0.0-alpha.16"
+okhttp = "4.12.0"
+gson = "2.10.1"
 
 [libraries]
 # Compose BOM
@@ -53,6 +55,12 @@ vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = 
 
 # Core
 core-ktx = { group = "androidx.core", name = "core-ktx", version = "1.13.1" }
+
+# OkHttp
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+
+# Gson
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

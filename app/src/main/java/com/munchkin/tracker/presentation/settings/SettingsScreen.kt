@@ -32,14 +32,9 @@ fun SettingsScreen(
     Box(modifier = Modifier.fillMaxSize().background(Background)) {
         Column(modifier = Modifier.fillMaxSize()) {
             AppTopBar("Настройки")
-
             Box(modifier = Modifier.fillMaxSize().weight(1f)) {
                 MagicCircleBackground(alpha = 0.5f)
-
-                LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                LazyColumn(contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     item { SectionLabel("Голосовое управление") }
                     item {
                         SettingsCard {

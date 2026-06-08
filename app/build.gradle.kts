@@ -1,9 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+}
+
+val properties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
 }
 
 android {
@@ -16,6 +22,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        resValue("string", "openrouter_api_key", properties["OPENROUTER_API_KEY"] as? String ?: "")
     }
 
     buildTypes {
@@ -62,18 +70,18 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.core.ktx)
 
-    // DataStore for settings persistence
     implementation(libs.datastore.preferences)
 
     implementation(libs.vico.compose)
     implementation(libs.vico.core)
 
+    implementation(libs.okhttp)
+    implementation(libs.gson)
+
     debugImplementation(libs.compose.ui.tooling)
 
-    // Vosk
     implementation("com.alphacephei:vosk-android:0.3.47")
     implementation("net.java.dev.jna:jna:5.13.0@aar")
 
-    //graph
     implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-beta.2")
 }
