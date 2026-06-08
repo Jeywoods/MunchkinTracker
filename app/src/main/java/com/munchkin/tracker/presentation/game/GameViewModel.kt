@@ -100,13 +100,27 @@ class GameViewModel @Inject constructor(
                 if (game != null) {
                     gameStartMs = game.date
                     startTimer()
-                    val players = repo.getGamePlayers(game.id).first()
-                    _state.update { it.copy(players = players) }
-                    voiceManager.updatePlayerNames(players.map { it.player.name })
+                    observePlayers(game.id)
                 } else {
                     timerJob?.cancel()
+                    playersJob?.cancel()
                     _state.update { it.copy(players = emptyList(), lastDeltas = emptyMap()) }
                 }
+            }
+        }
+    }
+    private var playersJob: Job? = null
+
+    private fun observePlayers(gameId: Long) {
+        playersJob?.cancel()
+        playersJob = viewModelScope.launch {
+            repo.getGamePlayers(gameId).collect { players ->
+                _state.update { state ->
+                    state.copy(players = players.map { gp ->
+                        gp.copy(lastDelta = state.lastDeltas[gp.id] ?: 0)
+                    })
+                }
+                voiceManager.updatePlayerNames(players.map { it.player.name })
             }
         }
     }
