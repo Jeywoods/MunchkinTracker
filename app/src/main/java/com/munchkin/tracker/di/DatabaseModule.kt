@@ -26,4 +26,5 @@ object DatabaseModule {
     @Provides fun provideGameDao(db: MunchkinDatabase): GameDao = db.gameDao()
     @Provides fun provideGamePlayerDao(db: MunchkinDatabase): GamePlayerDao = db.gamePlayerDao()
     @Provides fun provideLevelChangeDao(db: MunchkinDatabase): LevelChangeDao = db.levelChangeDao()
+    @Provides fun provideStatsDao(db: MunchkinDatabase): StatsDao = db.statsDao()
 }

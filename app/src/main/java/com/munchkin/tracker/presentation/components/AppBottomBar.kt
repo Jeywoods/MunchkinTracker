@@ -29,6 +29,7 @@ fun AppBottomBar(navController: NavController) {
 
     NavigationBar(
         containerColor = Surface,
+        contentColor = Primary,
         tonalElevation = 0.dp
     ) {
         bottomNavItems.forEach { item ->
@@ -45,7 +46,14 @@ fun AppBottomBar(navController: NavController) {
                     }
                 },
                 icon = { Icon(item.icon, item.label) },
-                label = { Text(item.label) }
+                label = { Text(item.label) },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Primary,
+                    selectedTextColor = Primary,
+                    unselectedIconColor = OnSurfaceVariant,
+                    unselectedTextColor = OnSurfaceVariant,
+                    indicatorColor = Primary.copy(alpha = 0.15f)
+                )
             )
         }
     }

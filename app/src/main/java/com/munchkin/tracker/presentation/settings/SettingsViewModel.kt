@@ -50,7 +50,6 @@ class SettingsViewModel @Inject constructor(
 
     fun setAlwaysListen(enabled: Boolean) = save { it[KEY_ALWAYS_LISTEN] = enabled }
     fun setTtsEnabled(enabled: Boolean)   = save { it[KEY_TTS_ENABLED] = enabled }
-    fun setHotword(word: String)          = save { it[KEY_HOTWORD] = word }
 
     private fun save(block: (MutablePreferences) -> Unit) {
         viewModelScope.launch {

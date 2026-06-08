@@ -43,7 +43,6 @@ class VoiceManager @Inject constructor(
     private val _amplitude = MutableStateFlow(0f)
     val amplitude: StateFlow<Float> = _amplitude.asStateFlow()
 
-    // ─── Init ─────────────────────────────────────────────────────────────────
     fun init() {
         Log.d(TAG, "init() called")
         tts = TextToSpeech(context) { status ->
@@ -58,7 +57,6 @@ class VoiceManager @Inject constructor(
         }
     }
 
-    // ─── Start / stop listening ───────────────────────────────────────────────
     fun startListening() {
         Log.d(TAG, "startListening()")
 
@@ -115,7 +113,6 @@ class VoiceManager @Inject constructor(
         _command.value = null
     }
 
-    // ─── TTS ─────────────────────────────────────────────────────────────────
     fun speak(text: String) {
         Log.d(TAG, "speak(text=\"$text\") ttsReady=$ttsReady")
         if (ttsReady) {

@@ -83,13 +83,6 @@ class StatisticsViewModel @Inject constructor(
         }
     }
 
-    fun exportGames() {
-        viewModelScope.launch {
-            val csv = repo.exportGamesCsv()
-            _state.update { it.copy(csvContent = csv) }
-        }
-    }
-
     fun getGamePlayers(gameId: Long?): Flow<List<GamePlayer>> {
         if (gameId == null) return flowOf(emptyList())
         return repo.getGamePlayers(gameId)
@@ -107,11 +100,7 @@ class StatisticsViewModel @Inject constructor(
     fun deleteGame(game: Game) {
         viewModelScope.launch {
             repo.deleteGame(game.id)
-            // Обновляем список игр и всю статистику
             loadStats()
-            // Обновляем список игр принудительно
-            val games = repo.getAllGames()
-            // Не нужно, так как Flow сам обновит recentGames
         }
     }
     fun refresh() {

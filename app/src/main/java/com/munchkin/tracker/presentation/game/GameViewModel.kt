@@ -34,7 +34,7 @@ data class GameUiState(
 
 @HiltViewModel
 class GameViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @ApplicationContext private val appContext: Context,
     private val repo: MunchkinRepository,
     val voiceManager: VoiceManager,
     private val hotwordManager: HotwordManager
@@ -60,7 +60,7 @@ class GameViewModel @Inject constructor(
 
     private fun observeSettings() {
         viewModelScope.launch {
-            context.settingsDataStore.data.catch { emit(emptyPreferences()) }.collect { prefs ->
+            appContext.settingsDataStore.data.catch { emit(emptyPreferences()) }.collect { prefs ->
                 ttsEnabled = prefs[booleanPreferencesKey("tts_enabled")] ?: true
                 val listenEnabled = prefs[booleanPreferencesKey("always_listen")] ?: false
                 if (listenEnabled != alwaysListenEnabled) {
@@ -154,39 +154,11 @@ class GameViewModel @Inject constructor(
             val players = repo.getGamePlayers(game.id).first()
             _state.update { state ->
                 state.copy(
-                    players = players.map { gp ->
-                        gp.copy(lastDelta = state.lastDeltas[gp.id] ?: 0)
-                    },
+                    players = players.map { gp -> gp.copy(lastDelta = state.lastDeltas[gp.id] ?: 0) },
                     snackbarMessage = "Отменено"
                 )
             }
         }
-    }
-
-    fun undoLastPlayerAction(playerId: Long) {
-        val stack = playerUndoStacks[playerId] ?: return
-        val action = stack.removeLastOrNull() ?: return
-        globalUndoStack.remove(action)
-        viewModelScope.launch {
-            action()
-            val game = _state.value.activeGame ?: return@launch
-            val players = repo.getGamePlayers(game.id).first()
-            _state.update { state ->
-                state.copy(
-                    players = players.map { gp ->
-                        gp.copy(lastDelta = state.lastDeltas[gp.id] ?: 0)
-                    },
-                    lastDeltas = state.lastDeltas - playerId,
-                    snackbarMessage = "Отменено"
-                )
-            }
-        }
-    }
-
-
-    private fun undoGlobal() {
-        val action = globalUndoStack.removeLastOrNull() ?: return
-        viewModelScope.launch { action() }
     }
 
     fun changeLevel(gamePlayer: GamePlayer, delta: Int) {
@@ -195,20 +167,14 @@ class GameViewModel @Inject constructor(
         if (newLevel == oldLevel) return
         val playerId = gamePlayer.player.id
         viewModelScope.launch {
-            // Обновляем уровень
             repo.updateLevel(gamePlayer.id, oldLevel, newLevel, "manual")
-
-            // Обновляем силу на ту же дельту
             val newPower = (gamePlayer.player.power + delta).coerceIn(0, 50)
             val updatedPlayer = gamePlayer.player.copy(power = newPower)
             repo.updatePlayer(updatedPlayer)
-
             flashCard(gamePlayer.id, delta > 0)
             _state.update { s -> s.copy(
                 players = s.players.map { gp ->
-                    if (gp.id == gamePlayer.id) {
-                        gp.copy(lastDelta = delta, currentLevel = newLevel, player = updatedPlayer)
-                    } else gp
+                    if (gp.id == gamePlayer.id) gp.copy(lastDelta = delta, currentLevel = newLevel, player = updatedPlayer) else gp
                 },
                 lastDeltas = s.lastDeltas + (gamePlayer.id to delta),
                 snackbarMessage = "${gamePlayer.player.name}, уровень $newLevel"
@@ -254,11 +220,7 @@ class GameViewModel @Inject constructor(
         val oldPlayer = _state.value.players.find { it.player.id == playerId }?.player ?: return
         viewModelScope.launch {
             repo.updatePlayer(updated)
-            _state.update { s ->
-                s.copy(players = s.players.map {
-                    if (it.player.id == playerId) it.copy(player = updated) else it
-                })
-            }
+            _state.update { s -> s.copy(players = s.players.map { if (it.player.id == playerId) it.copy(player = updated) else it }) }
         }
         val undoAction: suspend () -> Unit = { repo.updatePlayer(oldPlayer) }
         globalUndoStack.add(undoAction)
@@ -268,9 +230,7 @@ class GameViewModel @Inject constructor(
     fun startNewGame(playerIds: List<Long>, winLevel: Int = 10) {
         viewModelScope.launch {
             val gid = repo.startNewGame(winLevel)
-            playerIds.forEach { playerId ->
-                repo.addPlayerToGame(gid, playerId)
-            }
+            playerIds.forEach { repo.addPlayerToGame(gid, it) }
             globalUndoStack.clear()
             playerUndoStacks.clear()
             _state.update { it.copy(lastDeltas = emptyMap()) }
@@ -282,18 +242,9 @@ class GameViewModel @Inject constructor(
             val g = _state.value.activeGame ?: return@launch
             val allPlayers = _state.value.players
             val durationMs = System.currentTimeMillis() - gameStartMs
-
-            // Находим всех игроков с уровнем >= winLevel
             val winners = allPlayers.filter { it.currentLevel >= g.winLevel }
-
-            if (winners.isNotEmpty()) {
-                // Все с 10 уровнем — победители
-                repo.finishGame(g.id, winners.map { it.id }, durationMs)
-            } else {
-                // Выбранный победитель
-                repo.finishGame(g.id, listOf(selectedWinnerId), durationMs)
-            }
-
+            if (winners.isNotEmpty()) repo.finishGame(g.id, winners.map { it.id }, durationMs)
+            else repo.finishGame(g.id, listOf(selectedWinnerId), durationMs)
             timerJob?.cancel()
             _state.update { it.copy(snackbarMessage = "Игра завершена! 🏆") }
             delay(3000)
@@ -302,10 +253,7 @@ class GameViewModel @Inject constructor(
     }
 
     fun addPlayerToCurrentGame(playerId: Long) {
-        viewModelScope.launch {
-            val g = _state.value.activeGame ?: return@launch
-            repo.addPlayerToGame(g.id, playerId)
-        }
+        viewModelScope.launch { val g = _state.value.activeGame ?: return@launch; repo.addPlayerToGame(g.id, playerId) }
     }
 
     fun createAndAddPlayer(name: String, gender: Gender) {

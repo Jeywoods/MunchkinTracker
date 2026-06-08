@@ -8,10 +8,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * Writes CSV content to the app's cache directory and returns a content:// Uri
- * that can be shared via Android's share sheet.
- */
 object CsvExportHelper {
 
     fun saveCsvAndShare(context: Context, csv: String, fileName: String): Intent {

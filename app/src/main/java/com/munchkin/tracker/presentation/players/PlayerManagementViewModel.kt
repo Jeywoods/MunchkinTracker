@@ -47,10 +47,6 @@ class PlayerManagementViewModel @Inject constructor(
         viewModelScope.launch { repo.deletePlayer(player) }
     }
 
-    fun updatePlayer(player: Player) {
-        viewModelScope.launch { repo.updatePlayer(player) }
-    }
-
     fun loadDetail(playerId: Long) {
         viewModelScope.launch {
             _detail.value = repo.getPlayerStats(playerId)
