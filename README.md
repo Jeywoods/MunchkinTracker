@@ -75,8 +75,8 @@ com.munchkin.tracker/
 | MaleColor | `#448AFF` | Синий (♂ мужской пол) |
 | FemaleColor | `#E91E63` | Розовый (♀ женский пол) |
 | GoldGlow | `#FFD700` | Победное золото |
-| LevelUp | `#4CAF50` | Зелёная вспышка +1 |
-| LevelDown | `#F44336` | Красная вспышка -1 |
+| LevelUp | `#4CAF50` | Зелёный +1 |
+| LevelDown | `#F44336` | Красный -1 |
 
 ---
 
